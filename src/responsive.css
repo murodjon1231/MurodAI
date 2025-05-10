@@ -1,0 +1,258 @@
+/* MurodAI Chat responsive styles */
+
+/* Mobil qurilmalar uchun asosiy responsive dizayn */
+@media (max-width: 768px) {
+  /* Sidebar stil o'zgartirishlari */
+  .min-h-screen {
+    flex-direction: column;
+  }
+  
+  /* Sidebar o'zgarishlari */
+  [class*="w-72"] {
+    width: 100% !important;
+    height: auto !important;
+    position: relative !important;
+    max-height: 100vh;
+    overflow-y: auto;
+    z-index: 50;
+    transition: max-height 0.3s ease;
+  }
+  
+  /* Sidebar yopiq holatda */
+  [class*="w-0"] {
+    max-height: 0 !important;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+  }
+  
+  /* Sidebar ochiq bo'lganda asosiy kontentni surish */
+  [class*="ml-72"] {
+    margin-left: 0 !important;
+  }
+  
+  /* Asosiy kontent uchun padding */
+  .p-4.max-w-4xl {
+    padding: 0.75rem;
+  }
+  
+  /* Header va chat oynasi */
+  header[class*="flex"] {
+    padding: 0.75rem !important;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  /* Chat xabarlari konteynerini kattalashtirish */
+  [style*="max-height: calc(100vh - 230px)"] {
+    max-height: calc(100vh - 260px) !important;
+  }
+  
+  /* Chat xabarlari */
+  [class*="max-w-[80%]"] {
+    max-width: 90% !important;
+  }
+  
+  /* Input maydoni */
+  textarea {
+    font-size: 16px !important; /* iOS safari avtomatik kattalashtirmasligini oldini olish */
+  }
+  
+  /* Xabar yozish paneli */
+  form > div[class*="rounded-xl"] {
+    border-radius: 0.5rem !important;
+  }
+  
+  /* Button kattaroq bo'lishi uchun */
+  button[type="submit"] {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    height: 40px;
+  }
+  
+  /* AI model tanlash modali */
+  [class*="max-w-md"] {
+    width: 90% !important;
+  }
+}
+
+/* O'ta kichik ekranlar uchun (telefon) */
+@media (max-width: 480px) {
+  /* Header uchun */
+  h1[class*="text-2xl"] {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Chat xabarlari */
+  [class*="max-w-[80%]"] {
+    max-width: 95% !important;
+  }
+  
+  /* AI model tanlash tugmasi */
+  .flex.items-center.cursor-pointer {
+    font-size: 0.9rem;
+  }
+  
+  /* Yozish maydoni paneli */
+  div[class*="flex.items-center.p-2"] {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  
+  /* Rasm va fayl yuklash ikonkalari */
+  div[class*="flex.items-center.p-2"] label,
+  div[class*="flex.items-center.p-2"] button[type="button"] {
+    padding: 8px !important;
+  }
+  
+  /* Ovoz yozib olish paneli */
+  div.flex.items-center.mr-2 {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-right: 0 !important;
+    margin-bottom: 0.5rem;
+    width: 100%;
+  }
+  
+  /* Audio player */
+  audio {
+    width: 100% !important;
+    margin-top: 0.5rem;
+  }
+  
+  /* Chat sidebar elementi */
+  div[class*="p-3.rounded-lg.cursor-pointer"] {
+    padding: 0.5rem !important;
+  }
+  
+  /* Rasmlar preview */
+  img[class*="object-contain.rounded-lg"] {
+    max-height: 150px !important;
+  }
+}
+
+/* Planshetlar uchun (o'rta o'lcham) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Sidebar width */
+  [class*="w-72"] {
+    width: 240px !important;
+  }
+  
+  /* Asosiy kontent */
+  [class*="ml-72"] {
+    margin-left: 240px !important;
+  }
+  
+  /* Maks kenglik */
+  .max-w-4xl {
+    max-width: 90% !important;
+  }
+  
+  /* AI Modal */
+  [class*="max-w-md"] {
+    max-width: 450px !important;
+  }
+}
+
+/* Dark mode uchun qo'shimcha sozlamalar */
+@media (prefers-color-scheme: dark) {
+  /* Avtomatik dark mode faqat responsive holatda */
+  @media (max-width: 768px) {
+    img[class*="object-contain.rounded-lg"] {
+      border-color: #4a5568 !important;
+    }
+    
+    audio {
+      background-color: #2d3748;
+    }
+    
+    /* Ovoz tanib olish natijasi */
+    span.text-xs.italic {
+      color: #a0aec0 !important;
+    }
+  }
+}
+
+/* Safari uchun o'ziga xos sozlamalar */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 768px) {
+    /* iOS Safari'da input fokuslanganida sahifa kattalashishini oldini olish */
+    body {
+      -webkit-text-size-adjust: 100%;
+    }
+    
+    textarea {
+      font-size: 16px !important;
+    }
+    
+    /* iOS Safari'da fixed position muammolarini hal qilish */
+    div[class*="fixed.inset-0"] {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100vh;
+    }
+  }
+}
+
+/* Rasmlar responsivligi */
+.object-contain {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Kod bloklar responsivligi */
+.code-block pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Turli xil pixel ratio ekranlar uchun shrift sozlamalari */
+@media screen and (-webkit-min-device-pixel-ratio: 2), 
+       screen and (min-resolution: 192dpi) {
+  body {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Landscape (yotiq) orientatsiya uchun */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Sidebar */
+  [class*="w-72"] {
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  /* Chat xabarlari konteynerini moslashtirish */
+  [style*="max-height: calc(100vh - 230px)"] {
+    max-height: calc(100vh - 160px) !important;
+  }
+  
+  /* Form elementlarini kichikroq qilish */
+  textarea {
+    max-height: 60px;
+  }
+  
+  /* Header va tugmalarni kichikroq qilish */
+  header[class*="flex"] {
+    padding: 0.5rem !important;
+  }
+  
+  /* Xabar yozish paneli */
+  form > div[class*="rounded-xl"] {
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+/* Accessibility (qulaylik) uchun qo'shimcha sozlamalar */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

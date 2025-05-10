@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import logo from "/logo.png";
+import './responsive.css';
 const App = () => {
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
@@ -35,6 +36,7 @@ const App = () => {
       icon: "⚙️",
       description: "Backend dasturlash bo'yicha mutaxassis. Node.js, Python, Java, PHP va ma'lumotlar bazalari bilan ishlashga yordam beraman."
     },
+    // AI modellar ro'yxatiga qo'shimcha model qo'shish
     {
       id: 4,
       name: "RasmAI",
@@ -46,6 +48,18 @@ const App = () => {
       name: "OqilAI",
       icon: "🧠",
       description: "Men dunyoning eng zor gamer AI yordamchiman. Sizga har qanday o'yin haqida maslahatlar beraman, strategiyalar ishlab chiqaman va o'yinlarni yanada qiziqarli qilish uchun yordam beraman!"
+    },
+    {
+      id: 6,
+      name: "KorishAI",
+      icon: "👁️",
+      description: "Rasmlarni analiz qilib, ularning mazmunini o'zbek tilida tushuntirib beradigan AI. Rasmlarni yuklang, men tahlil qilaman."
+    },
+    {
+      id: 7,
+      name: "OvozAI",
+      icon: "🎤",
+      description: "Ovozli xabarlarni tinglash va ularga javob berishga ixtisoslashgan AI. Mikrofon orqali gapiring, men sizni tinglayman!"
     }
   ]);
   const [activeAI, setActiveAI] = useState(null);
@@ -181,6 +195,7 @@ const App = () => {
     }
   };
 
+  // Rasmlarni generatsiya qilish funksiyasini yaxshilash
   const generateImage = async () => {
     if (!prompt.trim()) return;
 
@@ -188,14 +203,16 @@ const App = () => {
     setError("");
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // API chaqiruvini simulyatsiya
+      await new Promise(resolve => setTimeout(resolve, 2500));
 
-      const placeholderImage = `https://picsum.photos/seed/${Date.now()}/800/600`;
+      // Haqiqiy API o'rniga biz random rasmni olamiz
+      const placeholderImage = `https://source.unsplash.com/random/800x600/?${encodeURIComponent(prompt)}`;
       setGeneratedImage(placeholderImage);
 
       const userMessage = {
         role: "user",
-        content: prompt,
+        content: `Rasm generatsiyasi: ${prompt}`,
         timestamp: new Date().toISOString(),
       };
 
@@ -212,7 +229,8 @@ const App = () => {
       setCurrentChat(prev => ({
         ...prev,
         messages: updatedMessages,
-        title: prev.title === "Yangi suhbat" && prompt.trim() ? prompt.slice(0, 30) + (prompt.length > 30 ? "..." : "") : prev.title
+        title: prev.title === "Yangi suhbat" && prompt.trim() ?
+          `Rasm: ${prompt.slice(0, 30)}${prompt.length > 30 ? "..." : ""}` : prev.title
       }));
 
       setChatSessions(prev =>
@@ -266,8 +284,67 @@ const App = () => {
         promptPrefix = "Sen frontend dasturlash bo'yicha mutaxassissan. Faqat toza, optimallashtirilgan va zamonaviy frontend kodi yozib ber. ";
       } else if (activeAI.id === 3) {
         promptPrefix = "Sen backend dasturlash bo'yicha mutaxassissan. Faqat ishonchli, xavfsiz va samarali backend kodi yozib ber. ";
-      }else if (activeAI.id === 5) { 
+      } else if (activeAI.id === 5) {
         promptPrefix = "Sen gamer AI yordamchisan. O'yinlar haqida maslahatlar ber va strategiyalar ishlab chiq. ";
+      } else if (activeAI.id === 6) { // KorishAI
+        if (selectedImage) {
+          processImage();
+        } else {
+          setError("Iltimos, rasmni yuklang");
+        }
+        return;
+      } else if (activeAI.id === 7) { // OvozAI
+        if (audioBlob || recognizedText) {
+          // Ovozli xabar uchun logika
+          const userContent = recognizedText || "Ovozli xabar yuborildi";
+
+          const userMessage = {
+            role: "user",
+            content: userContent,
+            timestamp: new Date().toISOString(),
+            hasAudio: !!audioBlob,
+            audioUrl: audioUrl
+          };
+
+          const updatedMessages = [...currentChat.messages, userMessage];
+
+          setCurrentChat(prev => ({
+            ...prev,
+            messages: updatedMessages,
+            title: prev.title === "Yangi suhbat" ? `Ovozli suhbat - ${new Date().toLocaleTimeString()}` : prev.title
+          }));
+
+          // Oddiy formada javob qaytarish (aslida bu serverdan kelishi kerak)
+          setTimeout(() => {
+            const aiMessage = {
+              role: "assistant",
+              content: `"${userContent}" deb aytdingiz. Qanday yordam bera olaman?`,
+              timestamp: new Date().toISOString(),
+            };
+
+            const finalMessages = [...updatedMessages, aiMessage];
+
+            setCurrentChat(prev => ({
+              ...prev,
+              messages: finalMessages
+            }));
+
+            setChatSessions(prev =>
+              prev.map(chat =>
+                chat.id === currentChatId ?
+                  { ...chat, messages: finalMessages, timestamp: new Date().toISOString() } :
+                  chat
+              ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            );
+          }, 1000);
+
+          setAudioBlob(null);
+          setAudioUrl(null);
+          setRecognizedText("");
+        } else {
+          setError("Iltimos, ovozli xabar yozing");
+        }
+        return;
       }
 
       const imageNote = selectedImage ? `(Yuklangan rasm: ${selectedImage.name})` : "";
@@ -417,6 +494,182 @@ const App = () => {
 
     return formattedContent;
   };
+  // State'lar qo'shish (return dan oldin)
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [recognizedText, setRecognizedText] = useState("");
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [processingResults, setProcessingResults] = useState(null);
+
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const speechRecognitionRef = useRef(null);
+
+  // Audio yozib olish va ovozni tanib olish funksiyalari
+  useEffect(() => {
+    // Speech Recognition API-ni tekshirish va sozlash
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      speechRecognitionRef.current = new SpeechRecognition();
+      speechRecognitionRef.current.continuous = true;
+      speechRecognitionRef.current.interimResults = true;
+      speechRecognitionRef.current.lang = 'uz-UZ'; // O'zbek tili
+
+      speechRecognitionRef.current.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('');
+
+        setRecognizedText(transcript);
+        setPrompt(transcript);
+      };
+
+      speechRecognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setError('Ovozni tanib olishda xatolik: ' + event.error);
+        stopRecording();
+      };
+    }
+
+    return () => {
+      if (speechRecognitionRef.current) {
+        speechRecognitionRef.current.stop();
+      }
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, []);
+
+  const startRecording = async () => {
+    try {
+      setIsRecording(true);
+      setError('');
+      audioChunksRef.current = [];
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      mediaRecorderRef.current = new MediaRecorder(stream);
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setAudioBlob(audioBlob);
+        setAudioUrl(audioUrl);
+
+        // Stream'ni to'xtatish
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderRef.current.start();
+
+      // Speech Recognition boshlash
+      if (speechRecognitionRef.current) {
+        speechRecognitionRef.current.start();
+      }
+
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      setError('Mikrofonga ulanishda xatolik: ' + error.message);
+      setIsRecording(false);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+    }
+
+    if (speechRecognitionRef.current) {
+      speechRecognitionRef.current.stop();
+    }
+
+    setIsRecording(false);
+  };
+
+  const handleVoiceSubmit = () => {
+    if (recognizedText.trim()) {
+      handleSubmit();
+      setAudioBlob(null);
+      setAudioUrl(null);
+      setRecognizedText("");
+    }
+  };
+  // Rasmlarni analiz qilish funksiyasi
+  const processImage = async () => {
+    if (!selectedImage) return;
+
+    setIsProcessingImage(true);
+    setError("");
+
+    try {
+      // Bu yerda aslida tashqi API chaqiriladi, lekin demo uchun simulyatsiya qilamiz
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Faraz qilingan natijalar (haqiqiy API dan kelishi kerak)
+      const results = {
+        description: "Rasm tahlil natijasi: " + selectedImage.name,
+        tags: ["O'zbek", "rasm", "tahlil", `${selectedImage.type.split('/')[0]}`],
+        confidence: 0.95
+      };
+
+      setProcessingResults(results);
+
+      const userMessage = {
+        role: "user",
+        content: `Iltimos, ushbu rasmni tahlil qilib bering: ${selectedImage.name}`,
+        timestamp: new Date().toISOString(),
+        hasImage: true,
+        imageName: selectedImage.name,
+      };
+
+      const updatedMessages = [...currentChat.messages, userMessage];
+
+      setCurrentChat(prev => ({
+        ...prev,
+        messages: updatedMessages,
+        title: prev.title === "Yangi suhbat" ? `Rasm tahlili: ${selectedImage.name}` : prev.title
+      }));
+
+      // Simulyatsiya qilingan AI javobi
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const aiMessage = {
+        role: "assistant",
+        content: `Bu rasmda ${results.tags.join(', ')} bor. ${results.description} Ishonchlilik darajasi: ${results.confidence * 100}%.`,
+        timestamp: new Date().toISOString(),
+        imageAnalysis: true
+      };
+
+      const finalMessages = [...updatedMessages, aiMessage];
+
+      setCurrentChat(prev => ({
+        ...prev,
+        messages: finalMessages
+      }));
+
+      setChatSessions(prev =>
+        prev.map(chat =>
+          chat.id === currentChatId ?
+            { ...chat, messages: finalMessages, timestamp: new Date().toISOString() } :
+            chat
+        ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      );
+
+    } catch (error) {
+      setError("Rasmni tahlil qilishda xatolik: " + error.message);
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
 
   return (
     <div className={`min-h-screen ${darkMode ? "bg-gray-900 text-white" : "bg-gray-100"} transition-colors duration-300 flex`}>
@@ -458,31 +711,37 @@ const App = () => {
             <h3 className="text-lg font-medium mb-4">AI modelni tanlang</h3>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {aiModels.map(model => (
-                <div
-                  key={model.id}
+                <div key={model.id}
                   onClick={() => switchAiModel(model)}
                   className={`p-4 rounded-lg cursor-pointer transition-colors flex items-center gap-3 ${model.id === activeAI.id
-                      ? darkMode
-                        ? "bg-blue-600 text-white"
-                        : "bg-blue-500 text-white"
-                      : darkMode
-                        ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
-                        : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                    ? darkMode
+                      ? "bg-blue-600 text-white"
+                      : "bg-blue-500 text-white"
+                    : darkMode
+                      ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                     }`}
                 >
                   <span className="text-2xl">{model.icon}</span>
                   <div>
                     <h4 className="font-medium">{model.name}</h4>
-                    <p className={`text-sm ${model.id === activeAI.id ? "text-gray-100" : darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                    <p className={`text-sm ${model.id === activeAI.id
+                      ? "text-gray-100"
+                      : darkMode ? "text-gray-400" : "text-gray-600"
+                      }`}>
                       {model.description}
                     </p>
                   </div>
                 </div>
               ))}
+
+
+
             </div>
           </div>
         </div>
       )}
+
 
       <div
         className={`${sidebarOpen ? "w-72" : "w-0"} ${darkMode ? "bg-gray-800" : "bg-white"
@@ -508,8 +767,8 @@ const App = () => {
             <button
               onClick={createNewChat}
               className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 ${darkMode
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-blue-500 hover:bg-blue-600 text-white"
+                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-blue-500 hover:bg-blue-600 text-white"
                 }`}
             >
               <span>➕</span>
@@ -531,12 +790,12 @@ const App = () => {
                       key={chat.id}
                       onClick={() => switchChat(chat.id)}
                       className={`p-3 rounded-lg cursor-pointer transition-colors flex items-center justify-between group ${chat.id === currentChatId
-                          ? darkMode
-                            ? "bg-gray-700 text-blue-400"
-                            : "bg-blue-50 text-blue-700"
-                          : darkMode
-                            ? "bg-gray-800 hover:bg-gray-700 text-gray-300"
-                            : "bg-white hover:bg-gray-100 text-gray-700"
+                        ? darkMode
+                          ? "bg-gray-700 text-blue-400"
+                          : "bg-blue-50 text-blue-700"
+                        : darkMode
+                          ? "bg-gray-800 hover:bg-gray-700 text-gray-300"
+                          : "bg-white hover:bg-gray-100 text-gray-700"
                         }`}
                     >
                       <div className="flex items-center gap-2 overflow-hidden">
@@ -579,8 +838,8 @@ const App = () => {
               <button
                 onClick={toggleSidebar}
                 className={`p-2 rounded-full ${darkMode
-                    ? "bg-gray-700 hover:bg-gray-600 text-gray-300"
-                    : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                  ? "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                  : "bg-gray-200 hover:bg-gray-300 text-gray-700"
                   }`}
                 aria-label="Toggle Sidebar"
               >
@@ -601,8 +860,8 @@ const App = () => {
               <button
                 onClick={toggleDarkMode}
                 className={`p-2 rounded-full ${darkMode
-                    ? "bg-gray-700 hover:bg-gray-600 text-yellow-300"
-                    : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                  ? "bg-gray-700 hover:bg-gray-600 text-yellow-300"
+                  : "bg-gray-200 hover:bg-gray-300 text-gray-700"
                   }`}
                 aria-label={darkMode ? "Yorug' mode" : "Qorong'i mode"}
               >
@@ -629,8 +888,8 @@ const App = () => {
                             setTimeout(() => handleSubmit(), 100);
                           }}
                           className={`p-3 rounded-lg text-left ${darkMode
-                              ? "bg-gray-700 hover:bg-gray-600 border border-gray-600"
-                              : "bg-gray-100 hover:bg-gray-200 border border-gray-200"
+                            ? "bg-gray-700 hover:bg-gray-600 border border-gray-600"
+                            : "bg-gray-100 hover:bg-gray-200 border border-gray-200"
                             }`}
                         >
                           {suggestion}
@@ -645,8 +904,8 @@ const App = () => {
                               setTimeout(() => handleSubmit(), 100);
                             }}
                             className={`p-3 rounded-lg text-left ${darkMode
-                                ? "bg-gray-700 hover:bg-gray-600 border border-gray-600"
-                                : "bg-gray-100 hover:bg-gray-200 border border-gray-200"
+                              ? "bg-gray-700 hover:bg-gray-600 border border-gray-600"
+                              : "bg-gray-100 hover:bg-gray-200 border border-gray-200"
                               }`}
                           >
                             {suggestion}
@@ -661,43 +920,43 @@ const App = () => {
                                 setTimeout(() => handleSubmit(), 100);
                               }}
                               className={`p-3 rounded-lg text-left ${darkMode
-                                  ? "bg-gray-700 hover:bg-gray-600 border border-gray-600"
-                                  : "bg-gray-100 hover:bg-gray-200 border border-gray-200"
+                                ? "bg-gray-700 hover:bg-gray-600 border border-gray-600"
+                                : "bg-gray-100 hover:bg-gray-200 border border-gray-200"
                                 }`}
                             >
                               {suggestion}
                             </button>
-                          )): activeAI?.id === 5 ?
-                          ["Fifa xaqida maluot", "Brawl stars haqida malumot", "Qanqa qilib oyinlarda tez pul yegish"].map((suggestion) => (
-                            <button
-                              key={suggestion}
-                              onClick={() => {
-                                setPrompt(suggestion);
-                                setTimeout(() => handleSubmit(), 100);
-                              }}
-                              className={`p-3 rounded-lg text-left ${darkMode
+                          )) : activeAI?.id === 5 ?
+                            ["Fifa xaqida maluot", "Brawl stars haqida malumot", "Qanqa qilib oyinlarda tez pul yegish"].map((suggestion) => (
+                              <button
+                                key={suggestion}
+                                onClick={() => {
+                                  setPrompt(suggestion);
+                                  setTimeout(() => handleSubmit(), 100);
+                                }}
+                                className={`p-3 rounded-lg text-left ${darkMode
                                   ? "bg-gray-700 hover:bg-gray-600 border border-gray-600"
                                   : "bg-gray-100 hover:bg-gray-200 border border-gray-200"
-                                }`}
-                            >
-                              {suggestion}
-                            </button>
-                          ))
-                          : ["Algoritm nima?", "O'zbek tilida she'r yozing", "Python dasturlash tilini o'rgatib bering"].map((suggestion) => (
-                            <button
-                              key={suggestion}
-                              onClick={() => {
-                                setPrompt(suggestion);
-                                setTimeout(() => handleSubmit(), 100);
-                              }}
-                              className={`p-3 rounded-lg text-left ${darkMode
+                                  }`}
+                              >
+                                {suggestion}
+                              </button>
+                            ))
+                            : ["Algoritm nima?", "O'zbek tilida she'r yozing", "Python dasturlash tilini o'rgatib bering"].map((suggestion) => (
+                              <button
+                                key={suggestion}
+                                onClick={() => {
+                                  setPrompt(suggestion);
+                                  setTimeout(() => handleSubmit(), 100);
+                                }}
+                                className={`p-3 rounded-lg text-left ${darkMode
                                   ? "bg-gray-700 hover:bg-gray-600 border border-gray-600"
                                   : "bg-gray-100 hover:bg-gray-200 border border-gray-200"
-                                }`}
-                            >
-                              {suggestion}
-                            </button>
-                          ))}
+                                  }`}
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
                   </div>
                 </div>
               ) : (
@@ -706,12 +965,12 @@ const App = () => {
                     <div key={index} className={`${message.role === "user" ? "flex flex-row-reverse" : "flex"}`}>
                       <div
                         className={`max-w-[80%] rounded-2xl p-4 ${message.role === "user"
-                            ? darkMode
-                              ? "bg-blue-600 text-white"
-                              : "bg-blue-500 text-white"
-                            : darkMode
-                              ? "bg-gray-700 text-gray-200"
-                              : "bg-gray-100 text-gray-800"
+                          ? darkMode
+                            ? "bg-blue-600 text-white"
+                            : "bg-blue-500 text-white"
+                          : darkMode
+                            ? "bg-gray-700 text-gray-200"
+                            : "bg-gray-100 text-gray-800"
                           }`}
                       >
                         {message.role === "assistant" ? (
@@ -729,6 +988,22 @@ const App = () => {
                                 />
                               </div>
                             )}
+                            {message.hasAudio && (
+                              <div className="mt-2">
+                                <audio src={message.audioUrl} controls className="w-full max-w-xs" />
+                                {message.content && (
+                                  <div className="text-sm mt-1 italic">"{message.content}"</div>
+                                )}
+                              </div>
+                            )}
+
+                            {message.imageAnalysis && (
+                              <div className="bg-opacity-25 p-2 rounded mt-2 text-sm">
+                                <div className="font-semibold">Tahlil natijasi:</div>
+                                {message.content}
+                              </div>
+                            )}
+
                           </>
                         ) : (
                           <>
@@ -761,8 +1036,8 @@ const App = () => {
                       type="button"
                       onClick={removeImage}
                       className={`px-3 py-1 rounded text-xs ${darkMode
-                          ? "bg-red-600 hover:bg-red-700 text-white"
-                          : "bg-red-500 hover:bg-red-600 text-white"
+                        ? "bg-red-600 hover:bg-red-700 text-white"
+                        : "bg-red-500 hover:bg-red-600 text-white"
                         }`}
                     >
                       Rasmni o'chirish
@@ -776,6 +1051,7 @@ const App = () => {
                 </div>
               )}
 
+
               {generatedImage && !imagePreview && activeAI?.id === 4 && (
                 <div className={`p-4 border-b ${darkMode ? "border-gray-700" : "border-gray-300"}`}>
                   <div className="flex justify-between items-center mb-2">
@@ -786,8 +1062,8 @@ const App = () => {
                       type="button"
                       onClick={() => setGeneratedImage(null)}
                       className={`px-3 py-1 rounded text-xs ${darkMode
-                          ? "bg-red-600 hover:bg-red-700 text-white"
-                          : "bg-red-500 hover:bg-red-600 text-white"
+                        ? "bg-red-600 hover:bg-red-700 text-white"
+                        : "bg-red-500 hover:bg-red-600 text-white"
                         }`}
                     >
                       Yaratilgan rasmni o'chirish
@@ -807,8 +1083,8 @@ const App = () => {
                           document.body.removeChild(link);
                         }}
                         className={`absolute bottom-2 right-2 px-3 py-1 rounded text-sm ${darkMode
-                            ? "bg-blue-600 hover:bg-blue-700 text-white"
-                            : "bg-blue-500 hover:bg-blue-600 text-white"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white"
+                          : "bg-blue-500 hover:bg-blue-600 text-white"
                           }`}
                       >
                         Yuklab olish
@@ -818,11 +1094,12 @@ const App = () => {
                 </div>
               )}
 
+
               <div className="relative">
                 <textarea
                   className={`w-full p-4 resize-none focus:outline-none ${darkMode
-                      ? "bg-gray-800 text-white placeholder-gray-500"
-                      : "bg-white text-gray-800 placeholder-gray-400"
+                    ? "bg-gray-800 text-white placeholder-gray-500"
+                    : "bg-white text-gray-800 placeholder-gray-400"
                     }`}
                   rows="3"
                   placeholder={activeAI?.id === 4 ? "Yaratmoqchi bo'lgan rasm tavsifini yozing..." : "Xabaringizni yozing..."}
@@ -839,8 +1116,8 @@ const App = () => {
                   <button
                     type="button"
                     className={`absolute top-2 right-2 p-1 rounded-full ${darkMode
-                        ? "text-gray-400 hover:text-gray-300 hover:bg-gray-700"
-                        : "text-gray-400 hover:text-gray-600 hover:bg-gray-200"
+                      ? "text-gray-400 hover:text-gray-300 hover:bg-gray-700"
+                      : "text-gray-400 hover:text-gray-600 hover:bg-gray-200"
                       }`}
                     onClick={() => setPrompt("")}
                   >
@@ -854,8 +1131,8 @@ const App = () => {
                   <label
                     htmlFor="image-upload"
                     className={`p-2 rounded-full cursor-pointer transition-colors mr-2 ${darkMode
-                        ? "hover:bg-gray-700 text-gray-300"
-                        : "hover:bg-gray-200 text-gray-600"
+                      ? "hover:bg-gray-700 text-gray-300"
+                      : "hover:bg-gray-200 text-gray-600"
                       }`}
                   >
                     🖼️
@@ -871,24 +1148,86 @@ const App = () => {
                 )}
 
                 <div className="flex-1 text-right">
-                  <button
-                    type="submit"
-                    className={`px-6 py-2 rounded-full transition-colors text-white font-medium ${loading || isGeneratingImage
+
+                  <div className="flex-1 text-right flex items-center justify-end gap-2">
+                    {activeAI?.id === 7 && (
+                      <div className="flex items-center mr-2">
+                        <button
+                          type="button"
+                          onClick={isRecording ? stopRecording : startRecording}
+                          className={`p-3 rounded-full transition-colors ${isRecording
+                            ? "bg-red-500 animate-pulse text-white"
+                            : darkMode
+                              ? "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                              : "bg-gray-200 hover:bg-gray-300 text-gray-600"
+                            }`}
+                          disabled={loading}
+                        >
+                          {isRecording ? "⏹️" : "🎤"}
+                        </button>
+
+                        {audioUrl && (
+                          <div className="flex items-center mx-2">
+                            <audio src={audioUrl} controls className="h-8 w-32" />
+                            <button
+                              type="button"
+                              onClick={handleVoiceSubmit}
+                              className={`ml-2 p-2 rounded-full ${darkMode
+                                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                : "bg-blue-500 hover:bg-blue-600 text-white"
+                                }`}
+                            >
+                              ✓
+                            </button>
+                          </div>
+                        )}
+
+                        {recognizedText && !audioUrl && (
+                          <span className="text-xs italic truncate max-w-xs mx-2">
+                            "{recognizedText}"
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {activeAI?.id === 6 && selectedImage && !isProcessingImage && !processingResults && (
+                      <button
+                        type="button"
+                        onClick={processImage}
+                        className={`mr-2 px-4 py-2 rounded-lg ${darkMode
+                          ? "bg-purple-600 hover:bg-purple-700 text-white"
+                          : "bg-purple-500 hover:bg-purple-600 text-white"
+                          }`}
+                      >
+                        Rasmni tahlil qilish
+                      </button>
+                    )}
+
+                    <button
+                      type="submit"
+                      className={`px-6 py-2 rounded-full transition-colors text-white font-medium ${loading || isGeneratingImage || isProcessingImage
                         ? "bg-gray-500 cursor-not-allowed"
-                        : !prompt.trim() && !selectedImage
+                        : !prompt.trim() && !selectedImage && !audioBlob && activeAI?.id !== 7
                           ? darkMode
                             ? "bg-gray-700 text-gray-500 cursor-not-allowed"
                             : "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : darkMode
                             ? "bg-blue-600 hover:bg-blue-700"
                             : "bg-blue-500 hover:bg-blue-600"
-                      }`}
-                    disabled={loading || isGeneratingImage || (!prompt.trim() && !selectedImage)}
-                  >
-                    {loading ? "Yuborilmoqda..." :
-                      isGeneratingImage ? "Rasm yaratilmoqda..." :
-                        activeAI?.id === 4 ? "Rasm yaratish" : "Yuborish"}
-                  </button>
+                        }`}
+                      disabled={
+                        loading || isGeneratingImage || isProcessingImage ||
+                        (!prompt.trim() && !selectedImage && !audioBlob && activeAI?.id !== 7)
+                      }
+                    >
+                      {loading ? "Yuborilmoqda..." :
+                        isGeneratingImage ? "Rasm yaratilmoqda..." :
+                          isProcessingImage ? "Tahlil qilinmoqda..." :
+                            activeAI?.id === 4 ? "Rasm yaratish" :
+                              activeAI?.id === 6 ? "Tahlil qilish" :
+                                activeAI?.id === 7 ? "Tinglash" : "Yuborish"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
