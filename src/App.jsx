@@ -40,6 +40,12 @@ const App = () => {
       name: "RasmAI",
       icon: "🎨",
       description: "Tavsif asosida rasmlar yaratishga yordam beruvchi sun'iy intellekt. Rasmlar yaratish uchun tavsifni kiriting."
+    },
+    {
+      id: 5,
+      name: "OqilAI",
+      icon: "🧠",
+      description: "Men dunyoning eng zor gamer AI yordamchiman. Sizga har qanday o'yin haqida maslahatlar beraman, strategiyalar ishlab chiqaman va o'yinlarni yanada qiziqarli qilish uchun yordam beraman!"
     }
   ]);
   const [activeAI, setActiveAI] = useState(null);
@@ -260,6 +266,8 @@ const App = () => {
         promptPrefix = "Sen frontend dasturlash bo'yicha mutaxassissan. Faqat toza, optimallashtirilgan va zamonaviy frontend kodi yozib ber. ";
       } else if (activeAI.id === 3) {
         promptPrefix = "Sen backend dasturlash bo'yicha mutaxassissan. Faqat ishonchli, xavfsiz va samarali backend kodi yozib ber. ";
+      }else if (activeAI.id === 5) { 
+        promptPrefix = "Sen gamer AI yordamchisan. O'yinlar haqida maslahatlar ber va strategiyalar ishlab chiq. ";
       }
 
       const imageNote = selectedImage ? `(Yuklangan rasm: ${selectedImage.name})` : "";
@@ -646,6 +654,21 @@ const App = () => {
                         ))
                         : activeAI?.id === 3 ?
                           ["Node.js server yarating", "SQL so'rovlar haqida", "Ma'lumotlar bazasi dizayni"].map((suggestion) => (
+                            <button
+                              key={suggestion}
+                              onClick={() => {
+                                setPrompt(suggestion);
+                                setTimeout(() => handleSubmit(), 100);
+                              }}
+                              className={`p-3 rounded-lg text-left ${darkMode
+                                  ? "bg-gray-700 hover:bg-gray-600 border border-gray-600"
+                                  : "bg-gray-100 hover:bg-gray-200 border border-gray-200"
+                                }`}
+                            >
+                              {suggestion}
+                            </button>
+                          )): activeAI?.id === 5 ?
+                          ["Fifa xaqida maluot", "Brawl stars haqida malumot", "Qanqa qilib oyinlarda tez pul yegish"].map((suggestion) => (
                             <button
                               key={suggestion}
                               onClick={() => {
